@@ -13,48 +13,30 @@
 #include <linux/can.h>
 #include <linux/can/raw.h>
 
+#include "canutils.h"
+
 int main(int argc, char **argv)
 {
-	int s; 
-	struct sockaddr_can addr;
-	struct ifreq ifr;
-	struct can_frame frame;
-
 	printf("CAN Sockets Demo\r\n");
 
-    //Step 1 - Get the socket
-	if ((s = socket(PF_CAN, SOCK_RAW, CAN_RAW)) < 0) {
-		perror("Socket");
-		return 1;
-	}
-
-    //Step 2 - Get interface index
-	strcpy(ifr.ifr_name, "vcan0" );
-	ioctl(s, SIOCGIFINDEX, &ifr);
-
-    //Step 3 - Bind socket to the interface
-	memset(&addr, 0, sizeof(addr));
-	addr.can_family = AF_CAN;
-	addr.can_ifindex = ifr.ifr_ifindex;
-
-	if (bind(s, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
-		perror("Bind");
-		return 1;
-	}
-
-    //Step 4 - Create data frame that needs to be transimitted
+	//Step 1 - Setup a socket and bind it to the vcan interface
+	char canInput[] = "vcan0";
+	int s = getSocket(canInput); 
+	
+    //Step 2 - Create data frame that needs to be transimitted
+	struct can_frame frame;
 	frame.can_id = 0x555;
     //Payload size
 	frame.can_dlc = 5;
 	sprintf(frame.data, "Hello");
 
-    //Step 5 - Send data
+    //Step 3 - Send data
 	if (write(s, &frame, sizeof(struct can_frame)) != sizeof(struct can_frame)) {
 		perror("Write");
 		return 1;
 	}
 
-    //Step 6 - Close socket once data is sent
+    //Step 4 - Close socket once data is sent
 	if (close(s) < 0) {
 		perror("Close");
 		return 1;

@@ -11,9 +11,11 @@
 #include <linux/can.h>
 #include <linux/can/raw.h>
 
+#include "canutils.h"
+
 int main(int argc, char **argv)
 {
-	int s, i; 
+	int i; 
 	int nbytes;
 	struct sockaddr_can addr;
 	struct ifreq ifr;
@@ -21,27 +23,11 @@ int main(int argc, char **argv)
 
 	printf("CAN Sockets Receive Demo\r\n");
 
-    //Step 1 - Get the socket
-	if ((s = socket(PF_CAN, SOCK_RAW, CAN_RAW)) < 0) {
-		perror("Socket");
-		return 1;
-	}
+	//Step 1 - Setup a socket and bind it to the vcan interface
+	char canInput[] = "vcan0";
+	int s = getSocket(canInput); 
 
-    //Step 2 - Get interface index
-	strcpy(ifr.ifr_name, "vcan0" );
-	ioctl(s, SIOCGIFINDEX, &ifr);
-
-    //Step 3 - Bind socket to the interface
-	memset(&addr, 0, sizeof(addr));
-	addr.can_family = AF_CAN;
-	addr.can_ifindex = ifr.ifr_ifindex;
-
-	if (bind(s, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
-		perror("Bind");
-		return 1;
-	}
-
-    //Step 4 - Wait and read data
+    //Step 2 - Wait and read data
 	nbytes = read(s, &frame, sizeof(struct can_frame));
 
  	if (nbytes < 0) {
